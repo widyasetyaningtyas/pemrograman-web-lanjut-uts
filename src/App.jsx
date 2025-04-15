@@ -1,52 +1,49 @@
 import { useState } from 'react'
-import Note from './components/Note'
 
-const App = (props) => {
-  const [notes, setNotes] = useState(props.notes)
-  const [newNote, setNewNote] = useState('')
-  const [showAll, setShowAll] = useState(true)
+const App = () => {
+  const [persons, setPersons] = useState([{ name: 'Widya Setyaningtyas', number: '081228135732' }])
+  const [newName, setNewName] = useState('')
+  const [newNumber, setNewNumber] = useState('')
 
-  const handleNoteChange = (event) => {
-    console.log(event.target.value)
-    setNewNote(event.target.value)
+  const handleNameChange = (event) => {
+    setNewName(event.target.value)
   }
 
-  const addNote = (event) => {
+  const handleNumberChange = (event) => {
+    setNewNumber(event.target.value)
+  }
+
+  const addPerson = (event) => {
     event.preventDefault()
-    console.log('button clicked', event.target)
-    const noteObject = {
-      content: newNote,
-      important: Math.random() < 0.5,
-      id: String(notes.length + 1),
+    const newPerson = {
+      name: newName,
+      number: newNumber
     }
-
-    setNotes(notes.concat(noteObject))
-    setNewNote('')
-    }
-
-    const notesToShow = showAll
-      ? notes
-      : notes.filter(note => note.important === true)
-
-    return (
-      <div>
-        <h1>Notes</h1>
-        <div>
-          <button onClick={() => setShowAll(!showAll)}>
-            show {showAll ? 'important' : 'all'}
-          </button>
-        </div>
-        <ul>
-        {notesToShow.map(note =>
-          <Note key={note.id} note={note} />
-        )}
-        </ul>
-        <form onSubmit={addNote}>
-          <input value={newNote} onChange={handleNoteChange}/>
-          <button type="submit">save</button>
-        </form>
-      </div>
-    )
+    setPersons(persons.concat(newPerson))
+    setNewName('')
+    setNewNumber('')
   }
+
+  return (
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-2">Phonebook</h2>
+      <form onSubmit={addPerson} className="mb-4">
+        <div className="mb-2">
+          Name: <input value={newName} onChange={handleNameChange} className="border p-1" />
+        </div>
+        <div className="mb-2">
+          Number: <input value={newNumber} onChange={handleNumberChange} className="border p-1" />
+        </div>
+        <button type="submit" className="bg-blue-500 text-white px-3 py-1 rounded">Add</button>
+      </form>
+      <h2 className="text-xl font-semibold">Numbers</h2>
+      <ul>
+        {persons.map((person, index) => (
+          <li key={index}>{person.name}: {person.number}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 export default App
