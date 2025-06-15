@@ -1,47 +1,128 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import Note from './components/Note'
+import noteService from './services/notes'
 
 const App = () => {
-  const [persons, setPersons] = useState([{ name: 'Widya Setyaningtyas', number: '081228135732' }])
-  const [newName, setNewName] = useState('')
-  const [newNumber, setNewNumber] = useState('')
+  const [notes, setNotes] = useState([])
+  const [newNote, setNewNote] = useState('')
+  const [showAll, setShowAll] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('some error happened...')
 
-  const handleNameChange = (event) => {
-    setNewName(event.target.value)
+  useEffect(() => {
+    noteService
+      .getAll()
+      .then(initialNotes => {
+        setNotes(initialNotes)
+    })
+
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/notes')
+      .then(response => {
+        console.log('promise fulfilled')
+        setNotes(response.data)
+    })
+  }, [])
+  console.log('render', notes.length, 'notes')
+    
+
+  const handleNoteChange = (event) => {
+    console.log(event.target.value)
+    setNewNote(event.target.value)
   }
 
-  const handleNumberChange = (event) => {
-    setNewNumber(event.target.value)
-  }
-
-  const addPerson = (event) => {
+  const addNote = (event) => {
     event.preventDefault()
-    const newPerson = {
-      name: newName,
-      number: newNumber
+    console.log('button clicked', event.target)
+    const noteObject = {
+      content: newNote,
+      important: Math.random() < 0.5,
+      id: String(notes.length + 1),
     }
-    setPersons(persons.concat(newPerson))
-    setNewName('')
-    setNewNumber('')
+    
+    axios
+    .post('http://localhost:3001/notes', noteObject)
+    .then(response => {
+      setNotes(notes.concat(noteObject))
+      setNewNote('')
+    })
+
+    noteService
+      .create(noteObject)
+      then(returnedNote => {
+        setNotes(notes.concat(returnedNote))
+        setNewNote('')
+      })
+
+
+    setNotes(notes.concat(noteObject))
+    setNewNote('')
   }
+
+  const notesToShow = showAll
+    ? notes
+    : notes.filter(note => note.important === true)
+
+  const toggleImportanceOf = id => {
+    const url = `http://localhost:3001/notes/${id}`
+    const note = notes.find(n => n.id === id)
+    const changedNote = { ...note, important: !note.important }
+
+    noteService
+      .update(id, changedNote).then(returnedNote => {
+        setNotes(notes.map(note => note.id === id ? returnedNote : not))
+      })
+
+    .catch(error => {
+      setErrorMessage(
+        `Note '${note.content}' was already removed from server`
+      )
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+      setNotes(notes.filter(n => n.id !== id))
+    })
+    
+    axios.put(url, changedNote).then(response => {
+      setNotes(notes.map(n => n.id === id ? response.data : n))
+    })
+  }
+
+  const Notification = ({ message }) => {
+    if (message === null) {
+      return null
+    }
+    
+    return (
+      <div className='error'>
+        {message}
+      </div>
+    )
+  }
+    
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-2">Phonebook</h2>
-      <form onSubmit={addPerson} className="mb-4">
-        <div className="mb-2">
-          Name: <input value={newName} onChange={handleNameChange} className="border p-1" />
-        </div>
-        <div className="mb-2">
-          Number: <input value={newNumber} onChange={handleNumberChange} className="border p-1" />
-        </div>
-        <button type="submit" className="bg-blue-500 text-white px-3 py-1 rounded">Add</button>
-      </form>
-      <h2 className="text-xl font-semibold">Numbers</h2>
+    <div>
+      <Notification message={errorMessage} />
+      <h1>Notes</h1>
+      <div>
+        <button onClick={() => setShowAll(!showAll)}>
+          show {showAll ? 'important' : 'all'}
+        </button>
+      </div>
       <ul>
-        {persons.map((person, index) => (
-          <li key={index}>{person.name}: {person.number}</li>
-        ))}
+        {notesToShow.map(note =>
+          <Note 
+          key={note.id} 
+          note={note} 
+          toggleImportance={() => toggleImportanceOf(note.id)}/>
+        )}
       </ul>
+      <form onSubmit={addNote}>
+        <input value={newNote} onChange={handleNoteChange}/>
+        <button type="submit">save</button>
+      </form> 
     </div>
   )
 }
